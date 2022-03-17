@@ -1,23 +1,47 @@
 // main setup and loop for GLDRR
+// for IMU (BNO055), reference read_all_data example
+// for Altimeter (BMP390), reference simple_test
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
+#include "Adafruit_BMP3XX.h"
 
+/* begin - initialize IMU */
 uint16_t BNO055_SAMPLERATE_DELAY_MS = 100;
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 uint8_t sysCal, gyroCal, accelCal, magCal = 0; // calibration flags
+/* end - initialize IMU */
+
+/* begin - initialize altimeter */
+#define BMP_SCK 13
+#define BMP_CS 10
+#define SEALEVELPRESSURE_HPA (1013.25)
+Adafruit_BMP3XX bmp;
+float alt = 0;
+/* end - initialize altimeter */
 
 // the setup function runs once when you press reset or power the board
 void setup() {
 
   Serial.begin(115200);
-  //BNO055
+  // IMU - BNO055
   if (!bno.begin())
   {
     Serial.print("no BNO055 detected ... Check your wiring or I2C ADDR!");
     while (1);
   }
+  // Altimeter - BMP390
+  if (!bmp.begin_I2C()) {   // hardware I2C mode, can pass in address & alt Wire
+    Serial.println("Could not find a valid BMP3 sensor, check wiring!");
+    while (1);
+  }
+  // Set up oversampling and filter initialization
+  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
+  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
+  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
+  bmp.setOutputDataRate(BMP3_ODR_50_HZ);
+  
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   delay(1000);
@@ -25,7 +49,7 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  /* begin - aquire IMU (BNO055 data) */ 
+  /* begin - aquire IMU (BNO055) data */ 
   sensors_event_t angVelocityData, accelerometerData, gravityData;
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
@@ -37,19 +61,19 @@ void loop() {
   } else {
    printIMUCalibration();
   }
-  
-  /* end - aquire IMU (BNO055 data) */ 
+  /* end - aquire IMU (BNO055) data */ 
 
- 
+  /* begin - quire Altimeter (BMP390) data */
+  if (! bmp.performReading()) {
+    Serial.println("Failed to perform reading :(");
+    return;
+  }
 
-  
+  alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+  Serial.print("alt: ");
+  Serial.println(alt);
+  /* end - quire Altimeter (BMP390) data */
 
-  /*
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(100);                       // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(100);                       // wait for a second
-  */
   delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
@@ -108,6 +132,9 @@ void printEvent(sensors_event_t* event) {
   Serial.print(" |\tz= ");
   Serial.println(z);
 }
+
+/* prints altimeter data */
+
 
 /* Returns true if IMU (BNO055) is calibrated - false otherwise */
 bool imuCalibrated() {
