@@ -6,9 +6,10 @@
 #include "imu.h"
 #include "altimeter.h"
 
-
 Altimeter altimeter;
 IMU imu;
+//(TODO) GPS
+//(TODO) SD logger
 
 unsigned long prevLoopTime, currentLoopTime, startTime;
 
@@ -34,117 +35,73 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
+  // ensure IMU is calibrated
+  while (!imu.calibrated) {
+    imu.calibrate();
+    Serial.println("IMU calibrating");
+  }
 
-  // Timing
+  // ensure GPS has a fix
+
+  // sensor timing
   currentLoopTime = micros();
   data.delta_t = float(currentLoopTime - prevLoopTime) / 1000000.0f;
   prevLoopTime = currentLoopTime;
 
-  /* */
-
   Serial.print("State: "); Serial.println(data.state);
   Serial.print("Altitude: ");Serial.println(altimeter.altitude);
 
-  // this is the flight timestamp
-  if (data.state < LIFTOFF)
-  {
+  // flight timestamp
+  if (data.state <= PAD){
     data.flightTime = 0.0;
     startTime = millis();
-  }
-  else if (data.state > LIFTOFF || data.state < LANDED)
-  {
+  } else if (data.state > PAD && data.state < LANDED) {
     data.flightTime = float((millis() - startTime) / 1000.0f);
-  }
-  else if (data.state == LANDED)
-  {
+  } else {
+    // maintain current time
     data.flightTime = data.flightTime;
   }
-
+ 
   // functions to run every loop
-  if (imu.calibrated()) imu.sample(); // updates the IMU when new data is available
-  altimeter.sample();                 // updates the barometric sensor when new data is available
+  imu.sample();
+  altimeter.sample();
 
-  switch (data.state)
-  {
-  case IDLE:
-    // Checks continuity every (check config.h for timer)
-    // do stuffs
-    goToState(LIFTOFF);
-    break;
+  // state machine
+  switch (data.state){
+    case IDLE:
+      Serial.println("IDLE");
+      goToState(LIFTOFF);
+      break;
 
-  case LIFTOFF:
-#if is_DEBUG
-    Serial.println("LIFTOFF!");
-#endif
-    if ((imu.accel.z - 9.8067f) >= 3.0f || altimeter.altitude >= 1.0f)
-    {
-      // if (liftoffTimer.hasPassed(LAUNCH_ACCEL_TIME_THRESHOLD)) // noise safe timer so liftoff is only detect if a accel threshold is exceded for some particular time
-        goToState(POWERED_ASCENT);
-    }
-    break;
+    case LIFTOFF:
+      Serial.println("LIFTOFF");
+      if (imu.detectLiftoff() || altimeter.detectLiftoff())
+        goToState(ASCENT);
+      break;
 
-  case POWERED_ASCENT:
-#if is_DEBUG
-    Serial.println("POWERED_ASCENT!");
-#endif
-    // FIXME
-    // calculate total accel of the vehicle = sqrt(x^2 + y^2 + z^2)
-    float accelTotal;
-    accelTotal = (sqrt(sq(imu.accel.x) + sq(imu.accel.y) + sq(imu.accel.z)));
-    if (accelTotal < 1.5f)
-      goToState(MECU);
-    break;
-  case MECU:
-    if (altimeter.detectApogee())
-      goToState(APOGGE);
-    break;
-  case APOGGE:
-#if is_DEBUG
-    Serial.println("APOGGE!");
-#endif
-    // if (pyro.fire())
-    goToState(PARACHUTE_DESCENT);
-    break;
-  case PARACHUTE_DESCENT:
-#if is_DEBUG
-    Serial.println("PARACHUTE_DESCENT!");
-#endif
-    // pyro.allOff(); // just to make sure the pyro channels go off
-    // TODO find a better way
-    // if (data.altimeter.altitude <= LIFTOFF_ALTITUDE_THRESHOLD) // this might not work if we stay above the pre-set AGL altitute, then the threshold will never be reached and the system will be kept in this state: to mitigate this we could check the rocket attitute to see if its stationary or not
-      // goToState(LANDED);
-    break;
-  case LANDED:
-// BEEP and blink LED: make it easier to find!
-#if is_DEBUG
-    Serial.println("LANDED!");
-#endif
-//    led.blinkSlow();
-    break;
-
-  case ABORT:
-    // not much we could do besides firing the parachute...
-    break;
-
-  case TEST: // debug mode
-
-    break;
+    case ASCENT:
+      if (altimeter.detectApogee())
+        goToState(APOGEE);
+      break;
+    
+    case APOGEE:
+      goToState(DESCENT);
+      break;
+    
+    case DESCENT:
+      break;
+    
+    case LANDED:
+      break;
+    
+    case ABORT:
+      break;
+    
+    case TEST:
+      break;
   }
 
-#if is_RADIO
-  telemetry.send2radio();
-#endif
-
-#if is_LOGGING
-  sdLoggger.logData(); // Log Data to SD Card when not on IDLE or LANDED state
-#endif
 }
-
-  //delay(BNO055_SAMPLERATE_DELAY_MS);
-
-
-
-
 
 
 

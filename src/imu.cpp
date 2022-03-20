@@ -2,19 +2,31 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include "imu.h"
+#include "data.h"
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
-uint8_t sysCal, gyroCal, accelCal, magCal = 0; // calibration flags
+
+IMU::IMU() {
+    sysCal = gyroCal = accelCal = magCal = 0;
+    liftoffDetectionMeasures = IMU_LIFTOFF_DETECTION_MEASURES;
+}
 
 bool IMU::begin() {
     if (!bno.begin()) return false;
     return true;
 }
 
-bool IMU::calibrated() {
+void IMU::calibrate() {
     bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
-    if (gyroCal == 3 && accelCal == 3 && magCal == 3) return true;
-    return false;
+    if (gyroCal == 3 && accelCal == 3 && magCal == 3) this->calibrated = true;
+}
+
+void IMU::detectLiftoff() {
+    if ((data.imu.accel.x - EARTH_ACCEL) >= (LAUNCH_ACCEL_THRESHOLD * EARTH_ACCEL)) {
+        this->liftoffDetectionMeasures -= 1;
+        if (this->liftoffDetectionMeasures == 0) return true;
+        else this->liftoffDetectionMeasures = IMU_LIFTOFF_DETECTION_MEASURES;
+    }
 }
 
 void IMU::sample() {

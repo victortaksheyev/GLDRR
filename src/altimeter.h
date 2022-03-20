@@ -1,25 +1,19 @@
 #ifndef ALTIMETER_H
 #define ALTIMETER_H
 
-
-
 class Altimeter {
     public:
-        Altimeter() {
-            altitude = prevAltitude = verticalVelocity = seaLevelOffset = maxAltitude = 0;
-        }
+        Altimeter();
         bool begin();
         void print();
         void sample();
         bool detectApogee();
-        float getVerticalVelocity();
-        float getAltitude();
-    // private:
-        float altitude;
-        float prevAltitude;
-        float verticalVelocity;
+        bool detectLiftoff();
+        float getSeaLevelOffset();
+    private:
         float seaLevelOffset;
-        float maxAltitude;
+        int apogeeDetectionMeasures;   // number of measures to confirm apogee detection
+        int liftoffDetectionMeasures;
 };
 
 #endif /* ALTIMETER_H */

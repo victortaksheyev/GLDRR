@@ -2,27 +2,18 @@
 #ifndef IMU_H
 #define IMU_H
 
-struct axis_t
-{
-    float x;
-    float y;
-    float z;
-};
-
 class IMU {
     public:
+        IMU();
         bool begin();
-        bool calibrated();
+        void calibrate();
         void sample();
         void print();
-        axis_t getAccel() {return accel;}
-        axis_t getGrav() {return grav;}
-        axis_t getAngv() {return angV;}
-
-    // private:
-        axis_t accel;
-        axis_t grav;
-        axis_t angV;
+        bool detectLiftoff();
+    private:
+        bool calibrated;
+        uint8_t sysCal, gyroCal, accelCal, magCal;
+        int liftoffDetectionMeasures;
 };
 
 #endif /* IMU_H */

@@ -2,10 +2,7 @@
 #include "Altimeter.h"
 #include "MAF.h"
 #include "data.h"
-
-#define SEALEVELPRESSURE_HPA (1013.25)
-#define BMP_SCK 13
-#define BMP_CS 10
+#include "config.h"
 
 Adafruit_BMP3XX bmp;
 MovingAverageFilter MAF_altitude(10);
@@ -29,13 +26,13 @@ bool Altimeter::begin()
     }
 
     // Just take the average for (relative Altitude determination)
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < SEA_LEVEL_DETERMINATION_INSTANCES; i++)
     {
       seaLevelOffset += bmp.readAltitude(SEALEVELPRESSURE_HPA);
     }
-    this->seaLevelOffset /= 50;
-    this->altitude = bmp.readAltitude(SEALEVELPRESSURE_HPA) - this->seaLevelOffset;
-    this->prevAltitude = 0; // make sure this is 0
+    this->seaLevelOffset /= SEA_LEVEL_DETERMINATION_INSTANCES;
+    data.altitude = bmp.readAltitude(SEALEVELPRESSURE_HPA) - this->seaLevelOffset;
+    data.prevAltitude = data.altitude;
     return true;
   }
   else{
@@ -46,37 +43,53 @@ bool Altimeter::begin()
 void Altimeter::sample() {
     float alt;
     if (bmp.performReading()){
-        alt = bmp.readAltitude(SEALEVELPRESSURE_HPA) - this->seaLevelOffset;
+        alt = bmp.readAltitude(SEALEVELPRESSURE_HPA) - getSeaLevelOffset();
     }
 
-    this->altitude = MAF_altitude.process(alt);
-    this->verticalVelocity = MAF_velocity.process(getVerticalVelocity());
+    data.altitude = MAF_altitude.process(alt);
+    data.verticalVelocity = MAF_velocity.process(getVerticalVelocity());
 
     // Record the max altitude
-    if (this->altitude > this->maxAltitude){
-        this->maxAltitude = this->altitude;
+    if (data.altitude > data.maxAltitude){
+        data.maxAltitude = data.altitude;
     }
 
     // Replace the previous_altitude with the current altitude for next loop
-    this->prevAltitude = this->altitude;
+    data.prevAltitude = data.altitude;
     return true;
 }
 
 float Altimeter::getVerticalVelocity(){
-  return (this->altitude - this->prevAltitude) / data.delta_t;
+  return (data.altitude - data.prevAltitude) / data.delta_t;
 }
 
 bool Altimeter::detectApogee(){
-  if ((this->altitude < this->maxAltitude)){
-    // if (apogeeTimer.hasPassed(100)){
-    //   Serial.printf("\n---- APOGGE! ---- Max altitude: %f", max_altitude);
-    //   return true;
-    // }
-    return true;
+  if (data.altitude < data.maxAltitude){
+    // ensure multiple instances of repeated altitude decrease
+    this->apogeeDetectionMeasures -= 1;
+    if (this->apogeeDetectionMeasures == 0) return true;
+    else this->apogeeDetectionMeasures = ALTIMERER_APOGEE_DETECTION_MEASURES;
   }
   return false;
 }
 
-float Altimeter::getAltitude() {
-    return this->altitude;
+bool Altimeter::detectLiftoff() {
+  // for # of measures, above liftoff threshold and increase of 3m each measure
+  if (data.altitude > LIFTOFF_ALTITUDE_THRESHOLD &&
+      (data.altitude - data.prevAltitude) > LIFTOFF_DELTA_THRESHOLD) {
+    this->liftoffDetectionMeasures -= 1;
+    if (this->liftoffDetectionMeasures == 0) return true;
+    else this->liftoffDetectionMeasures = ALTIMETER_LIFTOFF_DETECTION_MEASURES;
+  }
+  return false;
+}
+
+float Altimeter::getSeaLevelOffset() {
+  return this->seaLevelOffset;
+}
+
+Altimeter::Altimeter() {
+    this->seaLevelOffset = 0;
+    this->apogeeDetectionMeasures = ALTIMERER_APOGEE_DETECTION_MEASURES;
+    this->liftoffDetectionMeasures = ALTIMETER_LIFTOFF_DETECTION_MEASURES;
 }
