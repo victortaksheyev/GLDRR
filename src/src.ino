@@ -2,45 +2,30 @@
 // for IMU (BNO055), reference read_all_data example
 // for Altimeter (BMP390), reference simple_test
 #include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
-#include <utility/imumaths.h>
-#include "Adafruit_BMP3XX.h"
+#include "data.h"
+#include "imu.h"
+#include "altimeter.h"
 
-/* begin - initialize IMU */
-uint16_t BNO055_SAMPLERATE_DELAY_MS = 100;
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
-uint8_t sysCal, gyroCal, accelCal, magCal = 0; // calibration flags
-/* end - initialize IMU */
 
-/* begin - initialize altimeter */
-#define BMP_SCK 13
-#define BMP_CS 10
-#define SEALEVELPRESSURE_HPA (1013.25)
-Adafruit_BMP3XX bmp;
-float alt = 0;
-/* end - initialize altimeter */
+Altimeter altimeter;
+IMU imu;
 
-// the setup function runs once when you press reset or power the board
+unsigned long prevLoopTime, currentLoopTime, startTime;
+
 void setup() {
-
   Serial.begin(115200);
+
   // IMU - BNO055
-  if (!bno.begin())
+  if (!imu.begin())
   {
     Serial.print("no BNO055 detected ... Check your wiring or I2C ADDR!");
     while (1);
   }
   // Altimeter - BMP390
-  if (!bmp.begin_I2C()) {   // hardware I2C mode, can pass in address & alt Wire
-    Serial.println("Could not find a valid BMP3 sensor, check wiring!");
-    while (1);
+  if (!altimeter.begin()) {
+    Serial.print("no BMP390 detected ... Check your wiring or I2C ADDR!");
+    while(1);
   }
-  // Set up oversampling and filter initialization
-  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
-  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
-  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
-  bmp.setOutputDataRate(BMP3_ODR_50_HZ);
   
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
@@ -49,33 +34,141 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  /* begin - aquire IMU (BNO055) data */ 
-  sensors_event_t angVelocityData, accelerometerData, gravityData;
-  bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
-  bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
-  bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
- if (imuCalibrated()) {
-    printEvent(&angVelocityData);
-    printEvent(&accelerometerData);
-    printEvent(&gravityData);
-  } else {
-   printIMUCalibration();
+
+  // Timing
+  currentLoopTime = micros();
+  data.delta_t = float(currentLoopTime - prevLoopTime) / 1000000.0f;
+  prevLoopTime = currentLoopTime;
+
+  /* */
+
+  Serial.print("State: "); Serial.println(data.state);
+  Serial.print("Altitude: ");Serial.println(altimeter.altitude);
+
+  // this is the flight timestamp
+  if (data.state < LIFTOFF)
+  {
+    data.flightTime = 0.0;
+    startTime = millis();
   }
-  /* end - aquire IMU (BNO055) data */ 
-
-  /* begin - quire Altimeter (BMP390) data */
-  if (! bmp.performReading()) {
-    Serial.println("Failed to perform reading :(");
-    return;
+  else if (data.state > LIFTOFF || data.state < LANDED)
+  {
+    data.flightTime = float((millis() - startTime) / 1000.0f);
+  }
+  else if (data.state == LANDED)
+  {
+    data.flightTime = data.flightTime;
   }
 
-  alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-  Serial.print("alt: ");
-  Serial.println(alt);
-  /* end - quire Altimeter (BMP390) data */
+  // functions to run every loop
+  if (imu.calibrated()) imu.sample(); // updates the IMU when new data is available
+  altimeter.sample();                 // updates the barometric sensor when new data is available
 
-  delay(BNO055_SAMPLERATE_DELAY_MS);
+  switch (data.state)
+  {
+  case IDLE:
+    // Checks continuity every (check config.h for timer)
+    // do stuffs
+    goToState(LIFTOFF);
+    break;
+
+  case LIFTOFF:
+#if is_DEBUG
+    Serial.println("LIFTOFF!");
+#endif
+    if ((imu.accel.z - 9.8067f) >= 3.0f || altimeter.altitude >= 1.0f)
+    {
+      // if (liftoffTimer.hasPassed(LAUNCH_ACCEL_TIME_THRESHOLD)) // noise safe timer so liftoff is only detect if a accel threshold is exceded for some particular time
+        goToState(POWERED_ASCENT);
+    }
+    break;
+
+  case POWERED_ASCENT:
+#if is_DEBUG
+    Serial.println("POWERED_ASCENT!");
+#endif
+    // FIXME
+    // calculate total accel of the vehicle = sqrt(x^2 + y^2 + z^2)
+    float accelTotal;
+    accelTotal = (sqrt(sq(imu.accel.x) + sq(imu.accel.y) + sq(imu.accel.z)));
+    if (accelTotal < 1.5f)
+      goToState(MECU);
+    break;
+  case MECU:
+    if (altimeter.detectApogee())
+      goToState(APOGGE);
+    break;
+  case APOGGE:
+#if is_DEBUG
+    Serial.println("APOGGE!");
+#endif
+    // if (pyro.fire())
+    goToState(PARACHUTE_DESCENT);
+    break;
+  case PARACHUTE_DESCENT:
+#if is_DEBUG
+    Serial.println("PARACHUTE_DESCENT!");
+#endif
+    // pyro.allOff(); // just to make sure the pyro channels go off
+    // TODO find a better way
+    // if (data.altimeter.altitude <= LIFTOFF_ALTITUDE_THRESHOLD) // this might not work if we stay above the pre-set AGL altitute, then the threshold will never be reached and the system will be kept in this state: to mitigate this we could check the rocket attitute to see if its stationary or not
+      // goToState(LANDED);
+    break;
+  case LANDED:
+// BEEP and blink LED: make it easier to find!
+#if is_DEBUG
+    Serial.println("LANDED!");
+#endif
+//    led.blinkSlow();
+    break;
+
+  case ABORT:
+    // not much we could do besides firing the parachute...
+    break;
+
+  case TEST: // debug mode
+
+    break;
+  }
+
+#if is_RADIO
+  telemetry.send2radio();
+#endif
+
+#if is_LOGGING
+  sdLoggger.logData(); // Log Data to SD Card when not on IDLE or LANDED state
+#endif
 }
+
+  //delay(BNO055_SAMPLERATE_DELAY_MS);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
 
 void printEvent(sensors_event_t* event) {
   double x = -1000000, y = -1000000 , z = -1000000; //dumb values, easy to spot problem
@@ -133,16 +226,6 @@ void printEvent(sensors_event_t* event) {
   Serial.println(z);
 }
 
-/* prints altimeter data */
-
-
-/* Returns true if IMU (BNO055) is calibrated - false otherwise */
-bool imuCalibrated() {
-  bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
-  if (gyroCal == 3 && accelCal == 3 && magCal == 3)
-    return true;
-   return false;
-}
 
 void printIMUCalibration() {
 //  bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
@@ -155,4 +238,7 @@ void printIMUCalibration() {
   Serial.print(accelCal);
   Serial.print(" Mag=");
   Serial.println(magCal);
+
+
 }
+  */
