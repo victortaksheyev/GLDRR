@@ -10,6 +10,7 @@ Altimeter altimeter;
 IMU imu;
 //(TODO) GPS
 //(TODO) SD logger
+//(TODO) servo
 
 unsigned long prevLoopTime, currentLoopTime, startTime;
 
@@ -36,7 +37,7 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
   // ensure IMU is calibrated
-  while (!imu.calibrated) {
+  while (!imu.calibrated()) {
     imu.calibrate();
     Serial.println("IMU calibrating");
   }
@@ -49,7 +50,8 @@ void loop() {
   prevLoopTime = currentLoopTime;
 
   Serial.print("State: "); Serial.println(data.state);
-  Serial.print("Altitude: ");Serial.println(altimeter.altitude);
+  Serial.print("Altitude: ");Serial.println(data.altitude);
+  
 
   // flight timestamp
   if (data.state <= PAD){
@@ -68,13 +70,13 @@ void loop() {
 
   // state machine
   switch (data.state){
-    case IDLE:
+    case CHECK:
       Serial.println("IDLE");
-      goToState(LIFTOFF);
+      goToState(PAD);
       break;
 
-    case LIFTOFF:
-      Serial.println("LIFTOFF");
+    case PAD:
+      Serial.println("PAD");
       if (imu.detectLiftoff() || altimeter.detectLiftoff())
         goToState(ASCENT);
       break;
@@ -102,100 +104,3 @@ void loop() {
   }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-void printEvent(sensors_event_t* event) {
-  double x = -1000000, y = -1000000 , z = -1000000; //dumb values, easy to spot problem
-  if (event->type == SENSOR_TYPE_ACCELEROMETER) {
-    Serial.print("Accl:\t");
-    x = event->acceleration.x;
-    y = event->acceleration.y;
-    z = event->acceleration.z;
-  }
-  else if (event->type == SENSOR_TYPE_ORIENTATION) {
-    Serial.print("Orient:\t");
-    x = event->orientation.x;
-    y = event->orientation.y;
-    z = event->orientation.z;
-  }
-  else if (event->type == SENSOR_TYPE_MAGNETIC_FIELD) {
-    Serial.print("Mag:\t");
-    x = event->magnetic.x;
-    y = event->magnetic.y;
-    z = event->magnetic.z;
-  }
-  else if (event->type == SENSOR_TYPE_GYROSCOPE) {
-    Serial.print("Gyro:\t");
-    x = event->gyro.x;
-    y = event->gyro.y;
-    z = event->gyro.z;
-  }
-  else if (event->type == SENSOR_TYPE_ROTATION_VECTOR) {
-    Serial.print("Rot:\t");
-    x = event->gyro.x;
-    y = event->gyro.y;
-    z = event->gyro.z;
-  }
-  else if (event->type == SENSOR_TYPE_LINEAR_ACCELERATION) {
-    Serial.print("Linear:\t");
-    x = event->acceleration.x;
-    y = event->acceleration.y;
-    z = event->acceleration.z;
-  }
-  else if (event->type == SENSOR_TYPE_GRAVITY) {
-    Serial.print("Gravity:");
-    x = event->acceleration.x;
-    y = event->acceleration.y;
-    z = event->acceleration.z;
-  }
-  else {
-    Serial.print("Unk:\t");
-  }
-
-  Serial.print("\tx= ");
-  Serial.print(x);
-  Serial.print(" |\ty= ");
-  Serial.print(y);
-  Serial.print(" |\tz= ");
-  Serial.println(z);
-}
-
-
-void printIMUCalibration() {
-//  bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
-  Serial.println();
-  Serial.print("Calibration: Sys=");
-  Serial.print(sysCal);
-  Serial.print(" Gyro=");
-  Serial.print(gyroCal);
-  Serial.print(" Accel=");
-  Serial.print(accelCal);
-  Serial.print(" Mag=");
-  Serial.println(magCal);
-
-
-}
-  */

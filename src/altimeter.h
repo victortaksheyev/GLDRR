@@ -10,6 +10,7 @@ class Altimeter {
         bool detectApogee();
         bool detectLiftoff();
         float getSeaLevelOffset();
+        float getVerticalVelocity();
     private:
         float seaLevelOffset;
         int apogeeDetectionMeasures;   // number of measures to confirm apogee detection

@@ -47,7 +47,7 @@ void Altimeter::sample() {
     }
 
     data.altitude = MAF_altitude.process(alt);
-    data.verticalVelocity = MAF_velocity.process(getVerticalVelocity());
+    data.verticalVelocity = MAF_velocity.process(this->getVerticalVelocity());
 
     // Record the max altitude
     if (data.altitude > data.maxAltitude){

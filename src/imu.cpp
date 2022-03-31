@@ -3,6 +3,7 @@
 #include <utility/imumaths.h>
 #include "imu.h"
 #include "data.h"
+#include "config.h"
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
@@ -16,17 +17,23 @@ bool IMU::begin() {
     return true;
 }
 
-void IMU::calibrate() {
-    bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
-    if (gyroCal == 3 && accelCal == 3 && magCal == 3) this->calibrated = true;
+bool IMU::calibrated() {
+  if(this->cal) return true;
+  return false;  
 }
 
-void IMU::detectLiftoff() {
-    if ((data.imu.accel.x - EARTH_ACCEL) >= (LAUNCH_ACCEL_THRESHOLD * EARTH_ACCEL)) {
+void IMU::calibrate() {
+    bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
+    if (gyroCal == 3 && accelCal == 3 && magCal == 3) this->cal = true;
+}
+
+bool IMU::detectLiftoff() {
+    if ((data.accel.x - EARTH_ACCEL) >= (LAUNCH_ACCEL_THRESHOLD * EARTH_ACCEL)) {
         this->liftoffDetectionMeasures -= 1;
         if (this->liftoffDetectionMeasures == 0) return true;
         else this->liftoffDetectionMeasures = IMU_LIFTOFF_DETECTION_MEASURES;
     }
+    return false;
 }
 
 void IMU::sample() {
@@ -36,17 +43,17 @@ void IMU::sample() {
     bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
     bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
 
-    this->angV.x = angVelocityData.gyro.x;
-    this->angV.y = angVelocityData.gyro.y;
-    this->angV.z = angVelocityData.gyro.z;
+    data.angV.x = angVelocityData.gyro.x;
+    data.angV.y = angVelocityData.gyro.y;
+    data.angV.z = angVelocityData.gyro.z;
 
-    this->accel.x = accelerometerData.acceleration.x;
-    this->accel.y = accelerometerData.acceleration.y;
-    this->accel.z = accelerometerData.acceleration.z;
+    data.accel.x = accelerometerData.acceleration.x;
+    data.accel.y = accelerometerData.acceleration.y;
+    data.accel.z = accelerometerData.acceleration.z;
 
-    this->grav.x = gravityData.acceleration.x;
-    this->grav.y = gravityData.acceleration.y;
-    this->grav.z = gravityData.acceleration.z;
+    data.grav.x = gravityData.acceleration.x;
+    data.grav.y = gravityData.acceleration.y;
+    data.grav.z = gravityData.acceleration.z;
 }
 
 void IMU::print() {

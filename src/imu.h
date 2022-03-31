@@ -7,11 +7,12 @@ class IMU {
         IMU();
         bool begin();
         void calibrate();
+        bool calibrated();
         void sample();
         void print();
         bool detectLiftoff();
     private:
-        bool calibrated;
+        bool cal;
         uint8_t sysCal, gyroCal, accelCal, magCal;
         int liftoffDetectionMeasures;
 };
