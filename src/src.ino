@@ -5,11 +5,12 @@
 #include "data.h"
 #include "imu.h"
 #include "altimeter.h"
+#include "logger.h"
 
 Altimeter altimeter;
 IMU imu;
+Logger logger("GLDRRlog.txt");
 //(TODO) GPS
-//(TODO) SD logger
 //(TODO) servo
 
 unsigned long prevLoopTime, currentLoopTime, startTime;
@@ -20,13 +21,17 @@ void setup() {
   // IMU - BNO055
   if (!imu.begin())
   {
-    Serial.print("no BNO055 detected ... Check your wiring or I2C ADDR!");
+    Serial.print(F("imu begin failed"));
     while (1);
   }
   // Altimeter - BMP390
   if (!altimeter.begin()) {
-    Serial.print("no BMP390 detected ... Check your wiring or I2C ADDR!");
+    Serial.print(F("altimeter begin failed"));
     while(1);
+  }
+  // Logger
+  if (!logger.begin()) {
+    Serial.print(F("logger begin failed"));  
   }
   
   // initialize digital pin LED_BUILTIN as an output.
@@ -39,7 +44,7 @@ void loop() {
   // ensure IMU is calibrated
   while (!imu.calibrated()) {
     imu.calibrate();
-    Serial.println("IMU calibrating");
+    Serial.println(F("IMU calibrating"));
   }
 
   // ensure GPS has a fix
@@ -49,10 +54,9 @@ void loop() {
   data.delta_t = float(currentLoopTime - prevLoopTime) / 1000000.0f;
   prevLoopTime = currentLoopTime;
 
-  Serial.print("State: "); Serial.println(data.state);
-  Serial.print("Altitude: ");Serial.println(data.altitude);
+//  Serial.print(F("State: ")); Serial.println(data.state);
+//  Serial.print(F("Altitude: "));Serial.println(data.altitude);
   
-
   // flight timestamp
   if (data.state <= PAD){
     data.flightTime = 0.0;
@@ -68,15 +72,18 @@ void loop() {
   imu.sample();
   altimeter.sample();
 
+  // log data
+  bool res = logger.writeString("test data");
+ 
   // state machine
   switch (data.state){
     case CHECK:
-      Serial.println("IDLE");
+//      Serial.println(F("IDLE"));
       goToState(PAD);
       break;
 
     case PAD:
-      Serial.println("PAD");
+//      Serial.println(F("PAD"));
       if (imu.detectLiftoff() || altimeter.detectLiftoff())
         goToState(ASCENT);
       break;

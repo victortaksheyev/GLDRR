@@ -24,7 +24,7 @@ void goToState(State_t state);
 
 struct Telemetry_t
 {
-    Telemetry_t() {state = 0;}
+    Telemetry_t() {state = CHECK;}
     State_t state;    // State of the system
     float delta_t;    // Discrete Time
     float flightTime; // Keeps track of the time after liftoff

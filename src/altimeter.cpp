@@ -56,7 +56,6 @@ void Altimeter::sample() {
 
     // Replace the previous_altitude with the current altitude for next loop
     data.prevAltitude = data.altitude;
-    return true;
 }
 
 float Altimeter::getVerticalVelocity(){

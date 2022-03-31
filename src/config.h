@@ -28,7 +28,7 @@
 // LED
 
 // PINS
-    // sd card stuff
+#define CHIP_SELECT (10)
 
 
 #endif /* CONFIG_H */
