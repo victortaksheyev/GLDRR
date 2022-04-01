@@ -21,6 +21,7 @@ enum State_t
 };
 
 void goToState(State_t state);
+float accelMag(float x, float y, float z);
 
 struct Telemetry_t
 {
@@ -30,7 +31,6 @@ struct Telemetry_t
     float flightTime; // Keeps track of the time after liftoff
     float sampleRate; // samples per second
     axis_t accel;
-    axis_t grav;
     axis_t angV;
     float altitude;
     float prevAltitude;

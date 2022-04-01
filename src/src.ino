@@ -5,11 +5,11 @@
 #include "data.h"
 #include "imu.h"
 #include "altimeter.h"
-#include "logger.h"
+//#include "logger.h"
 
 Altimeter altimeter;
 IMU imu;
-Logger logger("GLDRRlog.txt");
+//Logger logger("GLDRRlog.txt");
 //(TODO) GPS
 //(TODO) servo
 
@@ -30,9 +30,9 @@ void setup() {
     while(1);
   }
   // Logger
-  if (!logger.begin()) {
-    Serial.print(F("logger begin failed"));  
-  }
+//  if (!logger.begin()) {
+//    Serial.print(F("logger begin failed"));  
+//  }
   
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
@@ -42,10 +42,12 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
   // ensure IMU is calibrated
+  /*
   while (!imu.calibrated()) {
     imu.calibrate();
     Serial.println(F("IMU calibrating"));
   }
+  */
 
   // ensure GPS has a fix
 
@@ -54,8 +56,42 @@ void loop() {
   data.delta_t = float(currentLoopTime - prevLoopTime) / 1000000.0f;
   prevLoopTime = currentLoopTime;
 
-//  Serial.print(F("State: ")); Serial.println(data.state);
-//  Serial.print(F("Altitude: "));Serial.println(data.altitude);
+
+  String dataString = "";
+  dataString += String(data.flightTime) + "|" + String(data.state) + "|";
+  dataString += String(data.accel.z) + "|" + String(accelMag(data.accel.x, data.accel.y, data.accel.z)) + "|";
+  dataString += String(data.angV.x) + "|" + String(data.angV.y) + "|" + String(data.angV.z) + "|";
+  dataString += String(data.altitude) + "|" + String(data.verticalVelocity);
+  // distance to location
+  // desired vs actual heading
+  // update dataDoc
+  // (θ+360) % 360 to convert -180 -> 180 into 0 -> 360.
+
+
+  /*
+   * Distance calcualtion:
+   * const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI/180; // φ, λ in radians
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+    
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    const d = R * c; // in meters
+   */
+
+   /*
+    * 
+    *   const x = (λ2-λ1) * Math.cos((φ1+φ2)/2);
+        const y = (φ2-φ1);
+        const d = Math.sqrt(x*x + y*y) * R;
+    */
+
+  Serial.println(dataString);
   
   // flight timestamp
   if (data.state <= PAD){
@@ -63,6 +99,7 @@ void loop() {
     startTime = millis();
   } else if (data.state > PAD && data.state < LANDED) {
     data.flightTime = float((millis() - startTime) / 1000.0f);
+    // log data
   } else {
     // maintain current time
     data.flightTime = data.flightTime;
@@ -73,7 +110,7 @@ void loop() {
   altimeter.sample();
 
   // log data
-  bool res = logger.writeString("test data");
+//  bool res = logger.writeString("test data");
  
   // state machine
   switch (data.state){
@@ -83,6 +120,7 @@ void loop() {
       break;
 
     case PAD:
+        goToState(ASCENT);
 //      Serial.println(F("PAD"));
       if (imu.detectLiftoff() || altimeter.detectLiftoff())
         goToState(ASCENT);

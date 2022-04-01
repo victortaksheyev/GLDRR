@@ -39,9 +39,8 @@ bool IMU::detectLiftoff() {
 void IMU::sample() {
     // TODO: get rid of additional sensors_event_t variable
     sensors_event_t angVelocityData, accelerometerData, gravityData;
-    bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+    bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_EULER);
     bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
 
     data.angV.x = angVelocityData.gyro.x;
     data.angV.y = angVelocityData.gyro.y;
@@ -50,10 +49,6 @@ void IMU::sample() {
     data.accel.x = accelerometerData.acceleration.x;
     data.accel.y = accelerometerData.acceleration.y;
     data.accel.z = accelerometerData.acceleration.z;
-
-    data.grav.x = gravityData.acceleration.x;
-    data.grav.y = gravityData.acceleration.y;
-    data.grav.z = gravityData.acceleration.z;
 }
 
 void IMU::print() {
