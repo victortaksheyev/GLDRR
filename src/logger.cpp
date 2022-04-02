@@ -1,5 +1,6 @@
 #include "logger.h"
 #include "config.h"
+#include "data.h"
 
 Logger::Logger(String filename) {
     pinMode(CHIP_SELECT, OUTPUT);
@@ -14,10 +15,13 @@ bool Logger::begin() {
     return true;
 }
 
-bool Logger::writeString(String data) {
+bool Logger::writeData() {
   this->file = SD.open(this->filename, FILE_WRITE);
   if (this->file) {
-    this->file.println(data);
+    this->file.print(data.flightTime);this->file.print("|");this->file.print(data.state);this->file.print("|");
+    this->file.print(data.accel.z);this->file.print("|");this->file.print(accelMag(data.accel.x, data.accel.y, data.accel.z));this->file.print("|");
+    this->file.print(data.angV.x);this->file.print("|");this->file.print(data.angV.y);this->file.print("|");this->file.print(data.angV.z);this->file.print("|");
+    this->file.print(data.altitude);this->file.println("|");
     this->file.close();
   } else {
      return false;

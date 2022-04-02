@@ -14,7 +14,7 @@ class Logger {
     public:
         Logger(String filename);
         void close();
-        bool writeString(String);
+        bool writeData();
         bool begin();
     private:
         File file;
