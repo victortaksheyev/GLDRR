@@ -2,7 +2,6 @@
 // for IMU (BNO055), reference read_all_data example
 // for Altimeter (BMP390), reference simple_test
 #include <Wire.h>
-#include <SD.h>
 #include <Arduino.h>
 #include "data.h"
 #include "imu.h"
@@ -16,43 +15,6 @@ Logger logger("parktest1.txt");
 //(TODO) servo
 
 unsigned long prevLoopTime, currentLoopTime, startTime;
-//
-//float bearing(float lat,float lon,float lat2,float lon2){
-//
-//    float teta1 = radians(lat);
-//    float teta2 = radians(lat2);
-//    float delta1 = radians(lat2-lat);
-//    float delta2 = radians(lon2-lon);
-//
-//    //==================Heading Formula Calculation================//
-//
-//    float y = sin(delta2) * cos(teta2);
-//    float x = cos(teta1)*sin(teta2) - sin(teta1)*cos(teta2)*cos(delta2);
-//    float brng = atan2(y,x);
-//    brng = degrees(brng);// radians to degrees
-//    brng = ( ((int)brng + 360) % 360 ); 
-//
-//    Serial.print("Heading GPS: ");
-//    Serial.println(brng);
-//
-//    return brng;
-//
-//
-//  }
-
-//  float distance(float lat1, float lon1, float lat2, float lat3) {
-//    float R = 6371000;
-//    float theta_1 = lat1 * PI / 180;
-//    float theta_2 = lat2 * PI/ 180;
-//    float delta_theta = (lat2 - lat1) * PI/180;
-//    float delta_L = (lon2-lon1) * PI/180;
-//
-//    float a = sin(delta_theta / 2) * sin(delta_theta / 2) + cos(theta_1) * cos(theta_2) * sin(delta_L / 2) * sin (delta_L / 2);
-//    float c = 2 * atan2(sqrt(a, sqrt(1-a));
-//    float d = R * c;
-//   }
-
-
 
 void setup() {
   Serial.begin(115200);

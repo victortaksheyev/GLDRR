@@ -25,11 +25,10 @@ float accelMag(float x, float y, float z);
 
 struct Telemetry_t
 {
-    Telemetry_t() {state = CHECK;}
+    Telemetry_t();
     State_t state;    // State of the system
     float delta_t;    // Discrete Time
     float flightTime; // Keeps track of the time after liftoff
-    float sampleRate; // samples per second
     axis_t accel;
     axis_t angV;
     float altitude;
@@ -37,6 +36,9 @@ struct Telemetry_t
     float verticalVelocity;
     float maxAltitude;
     // TODO: add GPS
+    bool GPSfix;   
+    float heading; // deg
+    float latCurr, latInit, lonCurr, lonInit;
 };
 
 extern Telemetry_t data;

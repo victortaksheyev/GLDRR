@@ -10,41 +10,15 @@ float accelMag(float x, float y, float z) {
   return sqrt(x*x + y*y + z*z);
 }
 
-//char* createDataString() {
-//  char* dataString = malloc(sizeof(char) * 20);
-//  dataString += String(data.state) + "|";
-//  dataString += String(data.delta_t) + "|";
-////  data.flightTime
-////  data.accel.x
-////  data.accel.y
-////  data.accel.z
-////
-////  data.grav.x
-////  data.grav.y
-////  data.grav.z
-////
-////  data.angV.x
-////  data.angV.y
-////  data.angV.z
-////
-////  data.altitude
-////  data.prevAltitude
-////  data.verticalVelocity
-////  data.maxAltitude
-//
-//  return dataString;
-//}
-
-
-/*  state_t state;    // State of the system
-    float delta_t;    // Discrete Time
-    float flightTime; // Keeps track of the time after liftoff
-    float sampleRate; // samples per second
-    axis_t accel;
-    axis_t grav;
-    axis_t angV;
-    float altitude;
-    float prevAltitude;
-    float verticalVelocity;
-    float maxAltitude;
- */
+Telemetry_t::Telemetry_t() {
+  this->state = CHECK;
+  this->delta_t = 0;
+  this->flightTime = 0;
+  this->accel.x = this->accel.y = this->accel.z = 0;
+  this->angV.x = this->angV.y = this->angV.z = 0;
+  this->altitude = this->prevAltitude = 0;
+  this->verticalVelocity = 0; 
+  this->maxAltitude = 0;
+  this->GPSfix = false;
+  this->heading = 0;
+}

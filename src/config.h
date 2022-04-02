@@ -4,6 +4,7 @@
 // constants
 #define EARTH_ACCEL (9.8067f)
 #define SEALEVELPRESSURE_HPA (1013.25)
+#define EARTH_RAD (6371000)
 
 // serial debugging
 #define DEBUG false
@@ -24,6 +25,9 @@
 #define SEA_LEVEL_DETERMINATION_INSTANCES (50)
 
 // GPS
+#define TX (0)
+#define RX (1)
+#define GPSECHO  false
 
 // LED
 
