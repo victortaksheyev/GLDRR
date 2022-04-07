@@ -16,8 +16,7 @@ enum State_t
     APOGEE = 3,
     DESCENT = 4,    // control algorithm runs
     LANDED = 5,
-    ABORT = 6,
-    TEST = 7,
+    TEST = 6,
 };
 
 void goToState(State_t state);
@@ -35,9 +34,9 @@ struct Telemetry_t
     float prevAltitude;
     float verticalVelocity;
     float maxAltitude;
-    // TODO: add GPS
     bool GPSfix;   
     float heading; // deg
+    float distance;
     float latCurr, latInit, lonCurr, lonInit;
 };
 

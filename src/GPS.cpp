@@ -1,4 +1,5 @@
 
+
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
 #include "config.h"
@@ -10,21 +11,37 @@ SoftwareSerial mySerial(TX, RX);
 Adafruit_GPS GPSSerial(&mySerial);
 
 GPS::GPS(){
-    firstSample = true;
+//    firstSample = true;
+  firstSample = false;
+  data.latInit = radians(36.058966);
+  data.lonInit = radians(-115.221528);
 }
 
+// TODO: change to void
 bool GPS::begin() {
-    GPSSerial.begin(9600);
-    GPSSerial.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-    GPSSerial.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-    delay(1000);
+  GPSSerial.begin(9600);
+  GPSSerial.sendCommand("$PGCMD,33,0*6D");
+  GPSSerial.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
+  GPSSerial.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+ 
+  return true;
+}
+
+void GPS::clearGPS() {
+  for (int i = 0; i < 2; i++) {
+    while(!GPSSerial.newNMEAreceived())
+      c = GPSSerial.read();  
+    GPSSerial.parse(GPSSerial.lastNMEA());
+  }
 }
 
 void GPS::sample() {
-    if (GPSSerial.newNMEAreceived()) {
-    if (!GPSSerial.parse(GPSSerial.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-      return;  // we can fail to parse a sentence in which case we should just wait for another
+    clearGPS();
+    while(!GPSSerial.newNMEAreceived()) {
+      c = GPSSerial.read();  
     }
+    GPSSerial.parse(GPSSerial.lastNMEA());
+
     if (GPSSerial.fix) {
         data.GPSfix = true;
         // get lat degrees
@@ -43,8 +60,8 @@ void GPS::sample() {
 
 float GPS::calcBearing() {
    //==================Heading Formula Calculation================//
-   float y = sin(data.latCurr-data.latInit) * cos(data.latCurr);
-   float x = cos(data.latInit)*sin(data.latCurr) - sin(data.latInit)*cos(data.latCurr)*cos(data.latCurr-data.latInit);
+   float y = sin(data.lonInit-data.lonCurr) * cos(data.latInit);
+   float x = cos(data.latCurr)*sin(data.latInit) - sin(data.latCurr)*cos(data.latInit)*cos(data.lonInit-data.lonCurr);
    float brng = atan2(y,x);
    brng = degrees(brng);// radians to degrees
    brng = ( ((int)brng + 360) % 360 ); 
@@ -52,8 +69,8 @@ float GPS::calcBearing() {
 }
 
  float GPS::calcDistance() {
-   float a = sin(data.latCurr - data.latInit / 2) * sin(data.latCurr - data.latInit / 2) + cos(data.latInit) * cos(data.latCurr) * sin(data.lonCurr - data.lonInit / 2) * sin (data.lonCurr - data.lonInit/ 2);
+   float a = sin((data.latCurr - data.latInit) / 2) * sin((data.latCurr - data.latInit) / 2) + cos(data.latInit) * cos(data.latCurr) * sin((data.lonCurr - data.lonInit) / 2) * sin ((data.lonCurr - data.lonInit)/ 2);
    float c = 2 * atan2(sqrt(a), sqrt(1-a));
    float d = EARTH_RAD * c;
-   return d;
+   return d;  // meters
   }

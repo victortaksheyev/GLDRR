@@ -9,8 +9,9 @@ class GPS {
         float calcBearing();
         float calcDistance();
     private:
- 
+        void clearGPS();
         bool firstSample;
+        char c;
 };
 
 #endif /* GPS_H */

@@ -23,6 +23,8 @@ bool Logger::writeData() {
     this->file.print(data.angV.x);this->file.print("|");this->file.print(data.angV.y);this->file.print("|");this->file.print(data.angV.z);this->file.print("|");
     this->file.print(data.altitude);this->file.println("|");
     this->file.close();
+
+    // update heading, distance, latitude, longitude, servo commands
   } else {
      return false;
   }  
