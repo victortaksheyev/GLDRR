@@ -8,17 +8,27 @@
 #include "altimeter.h"
 #include "logger.h"
 #include "GPS.h"
+#include "Winch.h"
+#include "config.h"
 
 Altimeter altimeter;
 IMU imu;
 Logger logger("parktest1.txt");
 GPS gps;
-//(TODO) servo
+Winch winch;
 
 unsigned long prevLoopTime, currentLoopTime, startTime;
 
 void setup() {
   Serial.begin(115200);
+
+  // ensure regulator ON
+  pinMode(REG_ENABLE, OUTPUT);
+  digitalWrite(REG_ENABLE, HIGH);
+
+  // Winch
+  winch.begin();
+
   // IMU - BNO055
   if (!imu.begin())
   {
@@ -42,12 +52,13 @@ void setup() {
  // TODO:
  // ensure GPS has a fix
  // ensure IMU is calibrated (store calibrated values in EEPROM)
-   /*
-  while (!imu.calibrated()) {
-    imu.calibrate();
-    Serial.println(F("IMU calibrating"));
-  }
-  */
+  
+//  while (!imu.calibrated()) {
+//    imu.calibrate();
+//    Serial.println(F("IMU calibrating"));
+//    delay(20);
+//  }
+  
 
   Serial.println("Adafruit GPS library basic parsing test!");
 
@@ -55,8 +66,8 @@ void setup() {
 }
 
 void loop() {
-  Serial.print(data.flightTime); Serial.print("|");Serial.print(data.GPSfix);Serial.print("|");Serial.print(data.latCurr); Serial.print("|");Serial.print(data.lonCurr); 
-  Serial.print("|"); Serial.print(data.heading); Serial.print("|");Serial.print(gps.calcDistance());Serial.println("|");  
+//  Serial.print(data.flightTime); Serial.print("|");Serial.print(data.GPSfix);Serial.print("|");Serial.print(data.latCurr); Serial.print("|");Serial.print(data.lonCurr); 
+//  Serial.print("|"); Serial.print(data.heading); Serial.print("|");Serial.print(gps.calcDistance());Serial.println("|");  
 
   /* sensor timing */
   currentLoopTime = micros();
@@ -78,7 +89,7 @@ void loop() {
   /* state machine */
   switch (data.state){
     case CHECK:
-      goToState(PAD);
+      goToState(DESCENT);
       break;
 
     case PAD:
@@ -105,9 +116,10 @@ void loop() {
       gps.calcBearing();
       imu.sample();
       altimeter.sample();
-      
-      if (true)
-        goToState(LANDED);
+      winch.command();
+      Serial.println("done with commanding winch");
+//      if (true)
+//        goToState(LANDED);
       break;
     
     case LANDED:

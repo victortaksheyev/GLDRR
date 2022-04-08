@@ -33,6 +33,14 @@
 
 // PINS
 #define CHIP_SELECT (10)
+#define SERVO2 (4)
+#define SERVO1 (3)
+#define REG_ENABLE (2)
+
+// PID
+#define Kp (3)
+#define Ki (0.02)
+#define Kd (3)
 
 
 #endif /* CONFIG_H */

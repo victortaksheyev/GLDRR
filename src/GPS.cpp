@@ -69,7 +69,7 @@ float GPS::calcBearing() {
 }
 
  float GPS::calcDistance() {
-   float a = sin((data.latCurr - data.latInit) / 2) * sin((data.latCurr - data.latInit) / 2) + cos(data.latInit) * cos(data.latCurr) * sin((data.lonCurr - data.lonInit) / 2) * sin ((data.lonCurr - data.lonInit)/ 2);
+   float a = sin((data.latInit - data.latCurr) / 2) * sin((data.latInit - data.latCurr) / 2) + cos(data.latCurr) * cos(data.latInit) * sin((data.lonInit - data.lonCurr) / 2) * sin ((data.lonInit - data.lonCurr)/ 2);
    float c = 2 * atan2(sqrt(a), sqrt(1-a));
    float d = EARTH_RAD * c;
    return d;  // meters
