@@ -64,8 +64,11 @@ void setup() {
   gpsBuzz();
   gps.sample();
  }
- data.latInit = data.latCurr;
- data.lonInit = data.lonCurr;
+// data.latInit = data.latCurr;
+// data.lonInit = data.lonCurr;
+data.latInit = radians(36.059607);
+data.lonInit = radians(-115.212231);
+
   
 //  while (!imu.calibrated()) {
 //    imu.calibrate();
