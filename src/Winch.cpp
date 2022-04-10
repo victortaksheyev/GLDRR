@@ -26,7 +26,6 @@ void Winch::begin() {
 }
 
 void Winch::command() {
-    Serial.println("commanding winch");
     unsigned long currTime = millis();
     float elapsedTime = (float)(currTime - prevTime);
 
@@ -37,21 +36,18 @@ void Winch::command() {
     else if (error > 180)
         error -= 360;
 
+    data.error = error;
     cumError += error * elapsedTime/1000;
     // compute the value to command tot he servo
     posCommand = static_cast<int>(Kp*error + Ki*(cumError) + Kd*((error - prevError)/elapsedTime));
-    //posCommand = static_cast<int>(Kp*error + Kd*((error - prevError)/elapsedTime) );
-    Serial.println(error);
-    Serial.println(posCommand);
-
-
+   
     
     if (posCommand > 500)
         posCommand = 500;
     else if (posCommand < -500)
         posCommand = -500;
     posCommand = map(posCommand, -500, 500, -90, 90);
-    Serial.println(posCommand);
+    data.servoCommand = posCommand + 90;
     // degrees
     if (abs(error) < 10) {
         // acceptable, don't command a change

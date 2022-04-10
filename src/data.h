@@ -38,6 +38,8 @@ struct Telemetry_t
     float heading; // deg
     float distance;
     float latCurr, latInit, lonCurr, lonInit;
+    int servoCommand;
+    float error;
 };
 
 extern Telemetry_t data;

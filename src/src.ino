@@ -10,10 +10,11 @@
 #include "GPS.h"
 #include "Winch.h"
 #include "config.h"
+//#include "buzzer.cpp"
 
 Altimeter altimeter;
 IMU imu;
-Logger logger("parktest1.txt");
+Logger logger;
 GPS gps;
 Winch winch;
 
@@ -21,10 +22,21 @@ unsigned long prevLoopTime, currentLoopTime, startTime;
 
 void setup() {
   Serial.begin(115200);
+  pinMode(BUZZER, OUTPUT);
+  delay(1000);
+    // Logger
+  pinMode(CHIP_SELECT, OUTPUT);
+  digitalWrite(CHIP_SELECT, HIGH);
+
+  if (!logger.begin()) {
+//    Serial.print(F("logger begin failed"));  
+    buzzError();
+    while(1);
+  }
 
   // ensure regulator ON
-  pinMode(REG_ENABLE, OUTPUT);
-  digitalWrite(REG_ENABLE, HIGH);
+//  pinMode(REG_ENABLE, OUTPUT);
+//  digitalWrite(REG_ENABLE, HIGH);
 
   // Winch
   winch.begin();
@@ -32,36 +44,37 @@ void setup() {
   // IMU - BNO055
   if (!imu.begin())
   {
-    Serial.print(F("imu begin failed"));
+//    Serial.print(F("imu begin failed"));
+    buzzError();
     while (1);
   }
-  // Altimeter - BMP390
+//   Altimeter - BMP390
   if (!altimeter.begin()) {
-    Serial.print(F("altimeter begin failed"));
+//    Serial.print(F("altimeter begin failed"));
+    buzzError();
     while(1);
   }
-  // Logger
-//  if (!logger.begin()) {
-//    Serial.print(F("logger begin failed"));  
-//    digitalWrite(LED_BUILTIN, HIGH);
-//    while(1);
-//  }
+
   // GPS
   gps.begin();
 
- // TODO:
  // ensure GPS has a fix
- // ensure IMU is calibrated (store calibrated values in EEPROM)
+ // acquire initial GPS location
+ while(!data.GPSfix) {
+  gpsBuzz();
+  gps.sample();
+ }
+ data.latInit = data.latCurr;
+ data.lonInit = data.lonCurr;
   
 //  while (!imu.calibrated()) {
 //    imu.calibrate();
 //    Serial.println(F("IMU calibrating"));
 //    delay(20);
 //  }
-  
 
-  Serial.println("Adafruit GPS library basic parsing test!");
-
+//  Serial.println(F("Sensors initialized, GPS location acquired."));
+  buzzSuccess();
   delay(1000);
 }
 
@@ -80,7 +93,7 @@ void loop() {
     startTime = millis();
   } else if (data.state > PAD && data.state < LANDED) {
     data.flightTime = float((millis() - startTime) / 1000.0f);
-//    logger.writeData();
+    logger.writeData();
   } else {
     // maintain current time
     data.flightTime = data.flightTime;
@@ -97,6 +110,7 @@ void loop() {
       imu.sample();
       altimeter.sample();
       if (imu.detectLiftoff() || altimeter.detectLiftoff())
+      if (altimeter.detectLiftoff())
         goToState(ASCENT);
       break;
 
@@ -117,7 +131,7 @@ void loop() {
       imu.sample();
       altimeter.sample();
       winch.command();
-      Serial.println("done with commanding winch");
+      
 //      if (true)
 //        goToState(LANDED);
       break;
@@ -129,4 +143,32 @@ void loop() {
       break;
   }
  
+}
+
+void buzzError() {
+  for (int i = 0; i < 3; i++) {
+    tone(BUZZER, 200);
+    delay(500);
+    noTone(BUZZER);
+    delay(100);
+  }
+}
+
+
+void buzzSuccess() {
+    // pulsing for flight
+    for (int i = 0; i < 3; i++) {
+      tone(BUZZER, 1000);
+      delay(200);
+      tone(BUZZER, 2000);
+      delay(500);
+    }
+   
+    noTone(BUZZER);
+}
+
+void gpsBuzz() {
+    tone(BUZZER, 1000);
+    delay(20);
+    noTone(BUZZER);
 }

@@ -10,13 +10,6 @@
 SoftwareSerial mySerial(TX, RX);
 Adafruit_GPS GPSSerial(&mySerial);
 
-GPS::GPS(){
-//    firstSample = true;
-  firstSample = false;
-  data.latInit = radians(36.058966);
-  data.lonInit = radians(-115.221528);
-}
-
 // TODO: change to void
 bool GPS::begin() {
   GPSSerial.begin(9600);
@@ -47,11 +40,6 @@ void GPS::sample() {
         // get lat degrees
         data.latCurr = radians(GPSSerial.latitudeDegrees);
         data.lonCurr = radians(GPSSerial.longitudeDegrees);
-        if (firstSample) {
-            firstSample = false;
-            data.latInit = radians(GPSSerial.latitudeDegrees);
-            data.lonInit = radians(GPSSerial.longitudeDegrees);
-        }
     } else {
         data.GPSfix = false;
         // use previous data as the current;
@@ -68,9 +56,9 @@ float GPS::calcBearing() {
    data.heading = brng;
 }
 
- float GPS::calcDistance() {
-   float a = sin((data.latInit - data.latCurr) / 2) * sin((data.latInit - data.latCurr) / 2) + cos(data.latCurr) * cos(data.latInit) * sin((data.lonInit - data.lonCurr) / 2) * sin ((data.lonInit - data.lonCurr)/ 2);
-   float c = 2 * atan2(sqrt(a), sqrt(1-a));
-   float d = EARTH_RAD * c;
-   return d;  // meters
-  }
+// float GPS::calcDistance() {
+//   float a = sin((data.latInit - data.latCurr) / 2) * sin((data.latInit - data.latCurr) / 2) + cos(data.latCurr) * cos(data.latInit) * sin((data.lonInit - data.lonCurr) / 2) * sin ((data.lonInit - data.lonCurr)/ 2);
+//   float c = 2 * atan2(sqrt(a), sqrt(1-a));
+//   float d = EARTH_RAD * c;
+//   return d;  // meters
+//  }

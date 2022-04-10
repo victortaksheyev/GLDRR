@@ -8,17 +8,12 @@
 #define LOGGER_H
 
 #include <SD.h>
-#include <string.h>
+#include <SPI.h>
 
 class Logger {
     public:
-        Logger(String filename);
-        void close();
         bool writeData();
         bool begin();
-    private:
-        File file;
-        String filename;
 };
 
 #endif /* LOGGER_H */

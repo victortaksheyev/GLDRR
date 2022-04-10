@@ -3,14 +3,12 @@
 
 class GPS {
     public:
-        GPS();
         bool begin();
         void sample();
         float calcBearing();
-        float calcDistance();
+
     private:
         void clearGPS();
-        bool firstSample;
         char c;
 };
 

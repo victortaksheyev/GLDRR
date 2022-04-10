@@ -29,7 +29,7 @@ https://en.wikipedia.org/wiki/Moving_average
 #ifndef MAF_h
 #define MAF_h
 
-#define MAX_DATA_POINTS 20
+#define MAX_DATA_POINTS 10
 
 class MovingAverageFilter
 {

@@ -50,7 +50,3 @@ void IMU::sample() {
     data.accel.y = accelerometerData.acceleration.y;
     data.accel.z = accelerometerData.acceleration.z;
 }
-
-void IMU::print() {
-    //? can we use serial here?
-}

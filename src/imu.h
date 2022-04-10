@@ -9,7 +9,6 @@ class IMU {
         void calibrate();
         bool calibrated();
         void sample();
-        void print();
         bool detectLiftoff();
     private:
         bool cal;

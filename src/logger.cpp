@@ -2,35 +2,24 @@
 #include "config.h"
 #include "data.h"
 
-Logger::Logger(String filename) {
-    pinMode(CHIP_SELECT, OUTPUT);
-
-    // initialize file
-    this->filename = filename;
-}
-
 bool Logger::begin() {
+    pinMode(CHIP_SELECT, OUTPUT);
+    digitalWrite(CHIP_SELECT, HIGH);
     if (!SD.begin(CHIP_SELECT))
       return false;
     return true;
 }
 
 bool Logger::writeData() {
-  this->file = SD.open(this->filename, FILE_WRITE);
-  if (this->file) {
-    this->file.print(data.flightTime);this->file.print("|");this->file.print(data.state);this->file.print("|");
-    this->file.print(data.accel.z);this->file.print("|");this->file.print(accelMag(data.accel.x, data.accel.y, data.accel.z));this->file.print("|");
-    this->file.print(data.angV.x);this->file.print("|");this->file.print(data.angV.y);this->file.print("|");this->file.print(data.angV.z);this->file.print("|");
-    this->file.print(data.altitude);this->file.println("|");
-    this->file.close();
-
-    // update heading, distance, latitude, longitude, servo commands
+  File dataFile = SD.open(FILENAME, FILE_WRITE);
+  if (dataFile) {
+    dataFile.print(data.flightTime);dataFile.print(F("|"));dataFile.print(data.state);dataFile.print(F("|"));
+    dataFile.print(data.accel.z);dataFile.print(F("|"));dataFile.print(accelMag(data.accel.x, data.accel.y, data.accel.z));dataFile.print(F("|"));
+    dataFile.print(data.angV.x);dataFile.print(F("|"));dataFile.print(data.altitude);dataFile.print(F("|"));dataFile.print(data.latCurr);dataFile.print(F("|"));dataFile.print(data.lonCurr);dataFile.print(F("|"));
+    dataFile.print(data.heading);dataFile.print(F("|"));dataFile.print(data.error);dataFile.print(F("|"));dataFile.println(data.servoCommand);
+    dataFile.close();
   } else {
      return false;
   }  
   return true;
-}
-
-void Logger::close() {
-    this->file.close();
 }

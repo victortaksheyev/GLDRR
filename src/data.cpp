@@ -21,4 +21,6 @@ Telemetry_t::Telemetry_t() {
   this->maxAltitude = 0;
   this->GPSfix = false;
   this->heading = 0;
+  this->latCurr = this->lonCurr = 0;
+  this->error = 0;
 }
