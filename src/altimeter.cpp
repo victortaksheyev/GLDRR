@@ -62,12 +62,22 @@ float Altimeter::getVerticalVelocity(){
   return (data.altitude - data.prevAltitude) / data.delta_t;
 }
 
+bool Altimeter::detectLanding() {
+  if (data.prevAltitude - data.altitude < 1) {
+    this->landingDetectionMesasures -= 1;
+    if (this->landingDetectionMesasures == 0) return true;
+  } else {
+    this->landingDetectionMesasures = ALTIMERER_LANDING_DETECTION_MEASURES;
+  }
+}
+
 bool Altimeter::detectApogee(){
   if (data.altitude < data.maxAltitude){
     // ensure multiple instances of repeated altitude decrease
     this->apogeeDetectionMeasures -= 1;
     if (this->apogeeDetectionMeasures == 0) return true;
-    else this->apogeeDetectionMeasures = ALTIMERER_APOGEE_DETECTION_MEASURES;
+  } else {
+      this->apogeeDetectionMeasures = ALTIMERER_APOGEE_DETECTION_MEASURES;
   }
   return false;
 }
@@ -78,7 +88,9 @@ bool Altimeter::detectLiftoff() {
       (data.altitude - data.prevAltitude) > LIFTOFF_DELTA_THRESHOLD) {
     this->liftoffDetectionMeasures -= 1;
     if (this->liftoffDetectionMeasures == 0) return true;
-    else this->liftoffDetectionMeasures = ALTIMETER_LIFTOFF_DETECTION_MEASURES;
+  }
+  else {
+    this->liftoffDetectionMeasures = ALTIMETER_LIFTOFF_DETECTION_MEASURES;
   }
   return false;
 }
@@ -91,4 +103,5 @@ Altimeter::Altimeter() {
     this->seaLevelOffset = 0;
     this->apogeeDetectionMeasures = ALTIMERER_APOGEE_DETECTION_MEASURES;
     this->liftoffDetectionMeasures = ALTIMETER_LIFTOFF_DETECTION_MEASURES;
+    this->landingDetectionMesasures = ALTIMERER_LANDING_DETECTION_MEASURES;
 }

@@ -9,12 +9,14 @@ class Altimeter {
         void sample();
         bool detectApogee();
         bool detectLiftoff();
+        bool detectLanding();
         float getSeaLevelOffset();
         float getVerticalVelocity();
     private:
         float seaLevelOffset;
         int apogeeDetectionMeasures;   // number of measures to confirm apogee detection
         int liftoffDetectionMeasures;
+        int landingDetectionMesasures;
 };
 
 #endif /* ALTIMETER_H */

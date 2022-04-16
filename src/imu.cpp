@@ -31,7 +31,8 @@ bool IMU::detectLiftoff() {
     if ((data.accel.x - EARTH_ACCEL) >= (LAUNCH_ACCEL_THRESHOLD * EARTH_ACCEL)) {
         this->liftoffDetectionMeasures -= 1;
         if (this->liftoffDetectionMeasures == 0) return true;
-        else this->liftoffDetectionMeasures = IMU_LIFTOFF_DETECTION_MEASURES;
+    } else {
+        this->liftoffDetectionMeasures = IMU_LIFTOFF_DETECTION_MEASURES;
     }
     return false;
 }

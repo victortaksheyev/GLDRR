@@ -124,9 +124,10 @@ void loop() {
       imu.sample();
       altimeter.sample();
       winch.command();
-      // if (LANDED DETECTED)
-        // camOff();
-      //  goToState(LANDED);
+      if (altimeter.detectLanding()) {
+        camOff();
+        goToState(LANDED);
+      }
       break;
     
     case LANDED:
@@ -137,4 +138,3 @@ void loop() {
   }
  
 }
-
