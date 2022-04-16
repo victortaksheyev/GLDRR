@@ -17,15 +17,15 @@ bool IMU::begin() {
     return true;
 }
 
-bool IMU::calibrated() {
-  if(this->cal) return true;
-  return false;  
-}
+// bool IMU::calibrated() {
+//   if(this->cal) return true;
+//   return false;  
+// }
 
-void IMU::calibrate() {
-    bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
-    if (gyroCal == 3 && accelCal == 3 && magCal == 3) this->cal = true;
-}
+// void IMU::calibrate() {
+//     bno.getCalibration(&sysCal, &gyroCal, &accelCal, &magCal);
+//     if (gyroCal == 3 && accelCal == 3 && magCal == 3) this->cal = true;
+// }
 
 bool IMU::detectLiftoff() {
     if ((data.accel.x - EARTH_ACCEL) >= (LAUNCH_ACCEL_THRESHOLD * EARTH_ACCEL)) {
@@ -38,7 +38,7 @@ bool IMU::detectLiftoff() {
 
 void IMU::sample() {
     // TODO: get rid of additional sensors_event_t variable
-    sensors_event_t angVelocityData, accelerometerData, gravityData;
+    sensors_event_t angVelocityData, accelerometerData;
     bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_EULER);
     bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
 

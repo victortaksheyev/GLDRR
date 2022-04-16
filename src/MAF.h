@@ -29,7 +29,7 @@ https://en.wikipedia.org/wiki/Moving_average
 #ifndef MAF_h
 #define MAF_h
 
-#define MAX_DATA_POINTS 10
+#define MAX_DATA_POINTS 20
 
 class MovingAverageFilter
 {
@@ -44,6 +44,6 @@ private:
   int k; // k stores the index of the current array read to create a circular memory through the array
   int dataPointsCount;
   float out;
-  int i; // just a loop counter
+  int i;
 };
 #endif

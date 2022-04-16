@@ -46,10 +46,10 @@ void Winch::command() {
         posCommand = 500;
     else if (posCommand < -500)
         posCommand = -500;
-    posCommand = map(posCommand, -500, 500, -90, 90);
+    posCommand = map(posCommand, -500, 500, -15, 15);
     data.servoCommand = posCommand + 90;
     // degrees
-    if (abs(error) < 10) {
+    if (abs(error) < 15) {
         // acceptable, don't command a change
     } else {
         90 + posCommand;

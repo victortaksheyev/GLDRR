@@ -39,6 +39,8 @@
 #define SERVO1 (3)
 #define REG_ENABLE (2)
 #define BUZZER (9)
+#define CAM1 (5)
+#define CAM2 (6)
 
 // PID
 #define Kp (3)

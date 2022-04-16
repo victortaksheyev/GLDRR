@@ -10,7 +10,7 @@
 #include "GPS.h"
 #include "Winch.h"
 #include "config.h"
-//#include "buzzer.cpp"
+#include "misc.h"
 
 Altimeter altimeter;
 IMU imu;
@@ -24,19 +24,12 @@ void setup() {
   Serial.begin(115200);
   pinMode(BUZZER, OUTPUT);
   delay(1000);
-    // Logger
-  pinMode(CHIP_SELECT, OUTPUT);
-  digitalWrite(CHIP_SELECT, HIGH);
 
   if (!logger.begin()) {
-//    Serial.print(F("logger begin failed"));  
+    // Serial.print(F("logger begin failed"));  
     buzzError();
     while(1);
   }
-
-  // ensure regulator ON
-//  pinMode(REG_ENABLE, OUTPUT);
-//  digitalWrite(REG_ENABLE, HIGH);
 
   // Winch
   winch.begin();
@@ -44,16 +37,20 @@ void setup() {
   // IMU - BNO055
   if (!imu.begin())
   {
-//    Serial.print(F("imu begin failed"));
+    // Serial.print(F("imu begin failed"));
     buzzError();
     while (1);
   }
-//   Altimeter - BMP390
+
+  // Altimeter - BMP390
   if (!altimeter.begin()) {
-//    Serial.print(F("altimeter begin failed"));
+    // Serial.print(F("altimeter begin failed"));
     buzzError();
     while(1);
   }
+
+  // Init pins for cameras
+  camInit();
 
   // GPS
   gps.begin();
@@ -61,29 +58,21 @@ void setup() {
  // ensure GPS has a fix
  // acquire initial GPS location
  while(!data.GPSfix) {
-  gpsBuzz();
+  buzzGPS();
   gps.sample();
  }
-// data.latInit = data.latCurr;
-// data.lonInit = data.lonCurr;
-data.latInit = radians(36.059607);
-data.lonInit = radians(-115.212231);
 
-  
-//  while (!imu.calibrated()) {
-//    imu.calibrate();
-//    Serial.println(F("IMU calibrating"));
-//    delay(20);
-//  }
+data.latInit = data.latCurr;
+data.lonInit = data.lonCurr;
+//  data.latInit = radians(36.059607);
+//  data.lonInit = radians(-115.212231);
 
-//  Serial.println(F("Sensors initialized, GPS location acquired."));
-  buzzSuccess();
-  delay(1000);
+// Serial.println(F("Sensors initialized, GPS location acquired."));
+buzzSuccess();
+delay(1000);
 }
 
 void loop() {
-//  Serial.print(data.flightTime); Serial.print("|");Serial.print(data.GPSfix);Serial.print("|");Serial.print(data.latCurr); Serial.print("|");Serial.print(data.lonCurr); 
-//  Serial.print("|"); Serial.print(data.heading); Serial.print("|");Serial.print(gps.calcDistance());Serial.println("|");  
 
   /* sensor timing */
   currentLoopTime = micros();
@@ -113,11 +102,12 @@ void loop() {
       imu.sample();
       altimeter.sample();
       if (imu.detectLiftoff() || altimeter.detectLiftoff())
-      if (altimeter.detectLiftoff())
+        camOn();
         goToState(ASCENT);
       break;
 
     case ASCENT:
+      // turn on camera
       imu.sample();
       altimeter.sample();
       if (altimeter.detectApogee())
@@ -134,9 +124,9 @@ void loop() {
       imu.sample();
       altimeter.sample();
       winch.command();
-      
-//      if (true)
-//        goToState(LANDED);
+      // if (LANDED DETECTED)
+        // camOff();
+      //  goToState(LANDED);
       break;
     
     case LANDED:
@@ -148,30 +138,3 @@ void loop() {
  
 }
 
-void buzzError() {
-  for (int i = 0; i < 3; i++) {
-    tone(BUZZER, 200);
-    delay(500);
-    noTone(BUZZER);
-    delay(100);
-  }
-}
-
-
-void buzzSuccess() {
-    // pulsing for flight
-    for (int i = 0; i < 3; i++) {
-      tone(BUZZER, 1000);
-      delay(200);
-      tone(BUZZER, 2000);
-      delay(500);
-    }
-   
-    noTone(BUZZER);
-}
-
-void gpsBuzz() {
-    tone(BUZZER, 1000);
-    delay(20);
-    noTone(BUZZER);
-}
