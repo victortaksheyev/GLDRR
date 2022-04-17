@@ -39,6 +39,7 @@ struct Telemetry_t
     float distance;
     float latCurr, latInit, lonCurr, lonInit;
     int servoCommand;
+    float servoCommandF;
     float error;
 };
 

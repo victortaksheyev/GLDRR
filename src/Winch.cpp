@@ -24,7 +24,10 @@ void Winch::begin() {
     servo.write(pos);
     delay(1000);
 }
-
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 void Winch::command() {
     unsigned long currTime = millis();
     float elapsedTime = (float)(currTime - prevTime);
@@ -39,21 +42,20 @@ void Winch::command() {
     data.error = error;
     cumError += error * elapsedTime/1000;
     // compute the value to command tot he servo
-    posCommand = static_cast<int>(Kp*error + Ki*(cumError) + Kd*((error - prevError)/elapsedTime));
-   
+    posCommand = Kp*error + Ki*cumError + Kd*((error - prevError)/elapsedTime);
     
     if (posCommand > 500)
         posCommand = 500;
     else if (posCommand < -500)
         posCommand = -500;
-    posCommand = map(posCommand, -500, 500, -15, 15);
-    data.servoCommand = posCommand + 90;
+    
+    data.servoCommandF = 90 + mapfloat(posCommand, -500, 500, -15, 15);
+    data.servoCommand = (int)data.servoCommandF;
     // degrees
     if (abs(error) < 15) {
         // acceptable, don't command a change
     } else {
-        90 + posCommand;
-        // servo.write(command);
+         servo.write(data.servoCommand);
     }
 
     prevError = error;                                //remember current error

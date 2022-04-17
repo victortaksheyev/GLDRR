@@ -19,6 +19,7 @@ GPS gps;
 Winch winch;
 
 unsigned long prevLoopTime, currentLoopTime, startTime;
+unsigned long sensorSample = millis();
 
 void setup() {
   Serial.begin(115200);
@@ -94,24 +95,38 @@ void loop() {
   /* state machine */
   switch (data.state){
     case CHECK:
-      goToState(DESCENT);
+//      goToState(DESCENT);
+      goToState(PAD);
       break;
 
     case PAD:
       // sample at ___ Hz
-      imu.sample();
-      altimeter.sample();
-      if (imu.detectLiftoff() || altimeter.detectLiftoff())
-        camOn();
-        goToState(ASCENT);
+      if (millis() - sensorSample >= 20) {
+//        Serial.print(data.flightTime);Serial.print(F("|"));Serial.print(data.state);Serial.println(F("|"));
+//        Serial.print(data.accel.z);Serial.print(F("|"));Serial.print(accelMag(data.accel.x, data.accel.y, data.accel.z));Serial.print(F("|"));
+//        Serial.print(data.altitude);Serial.println(F("|"));
+        sensorSample = millis();
+        imu.sample();
+        altimeter.sample();
+        if (imu.detectLiftoff() || altimeter.detectLiftoff()) {
+          camOn();
+          goToState(ASCENT);
+        }
+      }
+
       break;
 
     case ASCENT:
-      // turn on camera
-      imu.sample();
-      altimeter.sample();
-      if (altimeter.detectApogee())
-        goToState(APOGEE);
+      if (millis() - sensorSample >= 20) {
+//        Serial.print(data.flightTime);Serial.print(F("|"));Serial.print(data.state);Serial.println(F("|"));
+//        Serial.print(data.accel.z);Serial.print(F("|"));Serial.print(accelMag(data.accel.x, data.accel.y, data.accel.z));Serial.print(F("|"));
+//        Serial.print(data.altitude);Serial.println(F("|"));
+        sensorSample = millis();
+        imu.sample();
+        altimeter.sample();
+        if (altimeter.detectApogee())
+          goToState(APOGEE);
+      }
       break;
     
     case APOGEE:
@@ -124,7 +139,12 @@ void loop() {
       imu.sample();
       altimeter.sample();
       winch.command();
+//      Serial.print(data.flightTime);Serial.print(F("|"));Serial.print(data.state);Serial.print(F("|"));
+//      Serial.print(data.accel.z);Serial.print(F("|"));Serial.print(accelMag(data.accel.x, data.accel.y, data.accel.z));Serial.print(F("|"));
+//      Serial.print(data.angV.x);Serial.print(F("|"));Serial.print(data.altitude);Serial.print(F("|"));Serial.print(degrees(data.latCurr),7);Serial.print(F("|"));Serial.print(degrees(data.lonCurr),7);Serial.print(F("|"));
+//      Serial.print(data.heading);Serial.print(F("|"));Serial.print(data.error);Serial.print(F("|"));Serial.println(data.servoCommandF, 2);
       if (altimeter.detectLanding()) {
+        Serial.println("LANDED");
         camOff();
         goToState(LANDED);
       }

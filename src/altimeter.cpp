@@ -46,6 +46,8 @@ void Altimeter::sample() {
         alt = bmp.readAltitude(SEALEVELPRESSURE_HPA) - getSeaLevelOffset();
     }
 
+    // Replace the previous_altitude with the current altitude for next loop
+    data.prevAltitude = data.altitude;
     data.altitude = MAF_altitude.process(alt);
     data.verticalVelocity = MAF_velocity.process(this->getVerticalVelocity());
 
@@ -53,9 +55,6 @@ void Altimeter::sample() {
     if (data.altitude > data.maxAltitude){
         data.maxAltitude = data.altitude;
     }
-
-    // Replace the previous_altitude with the current altitude for next loop
-    data.prevAltitude = data.altitude;
 }
 
 float Altimeter::getVerticalVelocity(){
@@ -63,16 +62,18 @@ float Altimeter::getVerticalVelocity(){
 }
 
 bool Altimeter::detectLanding() {
-  if (data.prevAltitude - data.altitude < 1) {
+  if (data.prevAltitude - data.altitude < 0.04) {
     this->landingDetectionMesasures -= 1;
     if (this->landingDetectionMesasures == 0) return true;
   } else {
     this->landingDetectionMesasures = ALTIMERER_LANDING_DETECTION_MEASURES;
   }
+  return false;
 }
 
 bool Altimeter::detectApogee(){
-  if (data.altitude < data.maxAltitude){
+//  Serial.print(data.altitude); Serial.print("|"); Serial.print(data.maxAltitude); Serial.print("|");  Serial.print(data.verticalVelocity); Serial.println("|");
+  if (data.altitude < data.maxAltitude && data.verticalVelocity < 0){
     // ensure multiple instances of repeated altitude decrease
     this->apogeeDetectionMeasures -= 1;
     if (this->apogeeDetectionMeasures == 0) return true;
@@ -84,6 +85,7 @@ bool Altimeter::detectApogee(){
 
 bool Altimeter::detectLiftoff() {
   // for # of measures, above liftoff threshold and increase of 3m each measure
+  
   if (data.altitude > LIFTOFF_ALTITUDE_THRESHOLD &&
       (data.altitude - data.prevAltitude) > LIFTOFF_DELTA_THRESHOLD) {
     this->liftoffDetectionMeasures -= 1;
